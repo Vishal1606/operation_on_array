@@ -1,0 +1,100 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<pthread.h>
+#include<unistd.h>
+
+volatile int Thread_Running = 0;
+ pthread_t thread[3]; 
+ int N;
+ struct Results{ 
+ 	int MIN;
+	int MAX;
+	int AVG;
+ }R;
+void *Minimum(void *arr_ptr){
+ 	int i; 
+ 	int *ele = (int*)arr_ptr; 
+ 	R.MIN = ele[0]; 
+ 	for(i = 0; i < N; i++){	
+ 		if(ele[i] < R.MIN){	
+ 			R.MIN = ele[i];
+ 		}
+ 	}
+ 	Thread_Running -= 1;
+ return NULL;
+ }
+void *Maximum(void *arr_ptr){
+ 	int i;
+ 	int *ele = (int*)arr_ptr; 
+ 	for(i = 0; i < N; i++){
+ 		if(ele[i] > R.MAX){	
+ 			R.MAX = ele[i];
+ 		}
+}
+ 	Thread_Running -= 1;
+ return NULL;
+ }
+void *Average(void *arr_ptr){
+	int i;	
+	int *ele = (int*)arr_ptr; 
+	for(i = 0; i < N; i++){
+		R.AVG += ele[i];	
+	}
+	R.AVG = R.AVG/N;
+	Thread_Running -= 1;
+return NULL;
+}
+int Input(int n, int *arr_ptr){
+ 
+		int input;
+		int numberOfele = 0;
+    	printf("*****Dynamic Array Created*****\n");
+		for(;;){ 
+    		printf("\tEnter Any Number:\n\tEnter -Ve value to stop\n");
+			if (scanf("%d",&input) != 1){
+				printf("\nERROR.Not an Integer\nEnterAgain \nINTEGERS!\n");
+				exit(EXIT_FAILURE);
+			}
+    		if (input >= 0){ 
+       		 	if (numberOfele == n){
+          	  	  n += 1; 
+          		  arr_ptr = (int *)realloc(arr_ptr, n * sizeof(int));
+       			 }
+        		arr_ptr[numberOfele++] = input;
+    		} else {
+       		 printf("\n\tNumber of Element entered: %d\n", numberOfele);
+       		 break;
+   				 }
+			}
+	return numberOfele;
+		}
+void JoinThread(int numberOfThreads){
+	int i;
+	int s;
+	while(numberOfThreads >= 0){
+		s = pthread_join(thread[numberOfThreads], NULL);
+		 numberOfThreads--;
+	}
+}
+void CreateThread(int *arr_ptr){
+	int s; 
+ 	s = pthread_create(&thread[0], NULL, Minimum, (void *)arr_ptr);
+		 	Thread_Running += 1;
+	 s = pthread_create(&thread[1], NULL, Maximum, (void *)arr_ptr);
+        	 Thread_Running += 1;
+	 s = pthread_create(&thread[2], NULL, Average, (void *)arr_ptr);
+			Thread_Running += 1;
+}
+
+int main(){
+	int n = 1; 
+	int *arr_ptr = (int*)malloc(n * sizeof(int));
+		 N = Input(n, arr_ptr);
+		 CreateThread(arr_ptr);
+	    while(Thread_Running>0){
+				sleep(1);
+			}
+		JoinThread(2);	
+		printf("\tAverage of element is %d\n\tMaximum element is %d\n\tMinimum element is %d\n",R.AVG, R.MAX, R.MIN);
+	return(0);
+}
